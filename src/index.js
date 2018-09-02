@@ -14,6 +14,7 @@ const dayz = {
 };
 
 function RowBuilder(props) {
+  console.log(props);
   let person = props.person;
   return (
     <tr>
@@ -23,18 +24,20 @@ function RowBuilder(props) {
     </tr>
   );
 }
-function DisplaySchedule() {
-  let people = {
-    Simon: { schedule: [0, 8, 8, 8, 0, 8, 0] },
-    Steve: { schedule: [8, 8, 0, 0, 8, 8, 8] }
-  };
+function DisplaySchedule(props) {
+  let people = props.people;
+  // {
+  //   Simon: { schedule: [0, 8, 8, 8, 0, 8, 0] },
+  //   Steve: { schedule: [8, 8, 0, 0, 8, 8, 8] }
+  // };
 
   let displayPeople = {};
 
   for (let person in people) {
     displayPeople[person] = [person];
-    for (let day in people[person].schedule) {
-      displayPeople[person].push(people[person].schedule[day]);
+    for (let day in people[person]) {
+      displayPeople[person].push(people[person][day][1]);
+      // console.log(people[person][day][1]);
     }
   }
 
@@ -91,11 +94,18 @@ class Reservation extends React.Component {
 
   handleSubmit(event) {
     event.preventDefault();
-    let newPersonDictionary = this.state.personDictionary;
-    newPersonDictionary[this.state.name] = this.state.daysArray;
-    console.log(this.state.personDictionary);
-    console.log(this.state.daysArray);
-    console.log(newPersonDictionary);
+    let newPersonDictionary = JSON.parse(
+      JSON.stringify(this.state.personDictionary)
+    );
+
+    let newDaysArray = JSON.parse(JSON.stringify(this.state.daysArray));
+    newPersonDictionary[this.state.name] = newDaysArray;
+    // console.log(this.state.personDictionary);
+    // console.log(this.state.daysArray);
+    // console.log(newPersonDictionary);
+    this.setState({
+      personDictionary: newPersonDictionary
+    });
   }
 
   render() {
@@ -104,17 +114,17 @@ class Reservation extends React.Component {
         <InputForm
           personName={this.state.name}
           daysArray={this.state.daysArray}
-          handleSubmit={this.handleSubmit.bind(this)}
+          handleSubmit={this.handleSubmit}
           handleInputChange={this.handleInputChange.bind(this)}
         />
-        <DisplaySchedule />
+        <DisplaySchedule people={this.state.personDictionary} />
       </div>
     );
   }
 }
 function InputForm(props) {
   return (
-    <form style={{ flex: 1 }} onSubmit={ev => props.handleSubmit(ev)}>
+    <form style={{ flex: 1 }} onSubmit={props.handleSubmit}>
       <input type="submit" value="React Submit" />
       <table>
         <tbody>
