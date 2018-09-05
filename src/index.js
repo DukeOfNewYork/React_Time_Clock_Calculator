@@ -12,9 +12,17 @@ const dayz = {
   Saturday: true,
   Sunday: false
 };
-
+let hoursAndBooleanCombined = function hoursAndBooleanCombined(dayData: Array) {
+  if (dayData) {
+    if (dayData[0]) {
+      return true;
+    } else {
+      return dayData[1];
+    }
+  }
+  return dayData;
+};
 function RowBuilder(props) {
-  console.log(props);
   let person = props.person;
   return (
     <tr>
@@ -36,9 +44,10 @@ function DisplaySchedule(props) {
   for (let person in people) {
     displayPeople[person] = [person];
     for (let day in people[person]) {
-      displayPeople[person].push(people[person][day][1]);
-      // console.log(people[person][day][1]);
+      displayPeople[person].push(hoursAndBooleanCombined(people[person][day]));
+      // console.log(people[person][day]);
     }
+    // console.log(displayPeople[person]);
   }
 
   return (
@@ -109,6 +118,7 @@ class Reservation extends React.Component {
   }
 
   render() {
+    hoursAndBooleanCombined();
     return (
       <div>
         <InputForm
