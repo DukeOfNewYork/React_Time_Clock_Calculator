@@ -12,6 +12,19 @@ const dayz = {
   Saturday: true,
   Sunday: false
 };
+
+function Schedule(schedule) {
+  this.rawSchedule = schedule;
+  this.combinedSchedule = {};
+  this.combinedScheduleFunction = function() {
+    let rawWorkArray = [];
+    for (let day in schedule) {
+      rawWorkArray.push(hoursAndBooleanCombined(schedule[day]));
+    }
+    this.combinedSchedule = rawWorkArray;
+  };
+}
+
 let hoursAndBooleanCombined = function hoursAndBooleanCombined(dayData: Array) {
   if (dayData) {
     if (dayData[0]) {
@@ -22,39 +35,51 @@ let hoursAndBooleanCombined = function hoursAndBooleanCombined(dayData: Array) {
   }
   return dayData;
 };
+
+let calculateAutoHours = function calculateAutoHours(schedule) {
+  let rawWorkArray = [];
+  for (let day in schedule) {
+    rawWorkArray.push(hoursAndBooleanCombined(schedule[day]));
+  }
+};
+
+let numberOfAutoDays = function numberOfAutoDays(schedule) {
+  let autoDays = 0;
+  for (let day in schedule) {
+    if (schedule[day] === true) {
+      autoDays++;
+    }
+  }
+  return autoDays;
+};
+
 function RowBuilder(props) {
   let person = props.person;
   return (
     <tr>
-      {Object.entries(person).map(function(row, i) {
-        return <td>{row[1]}</td>;
+      {person.map(function(row, i) {
+        return <td>{row}</td>;
       }, this)}
     </tr>
   );
 }
 function DisplaySchedule(props) {
   let people = props.people;
-  // {
-  //   Simon: { schedule: [0, 8, 8, 8, 0, 8, 0] },
-  //   Steve: { schedule: [8, 8, 0, 0, 8, 8, 8] }
-  // };
-
   let displayPeople = {};
 
   for (let person in people) {
-    displayPeople[person] = [person];
-    for (let day in people[person]) {
-      displayPeople[person].push(hoursAndBooleanCombined(people[person][day]));
-      // console.log(people[person][day]);
-    }
-    // console.log(displayPeople[person]);
+    displayPeople[person] = new Schedule(people[person]);
+    displayPeople[person].combinedScheduleFunction();
   }
 
   return (
     <table>
       <tbody>
         {Object.entries(displayPeople).map(function(person, i) {
-          return <RowBuilder person={person[1]} />;
+          const nameAndSchedule = [person[0]].concat(
+            person[1].combinedSchedule
+          );
+          return <RowBuilder person={nameAndSchedule} />;
         }, this)}
       </tbody>
     </table>
@@ -70,8 +95,6 @@ class Reservation extends React.Component {
     this.state = {
       personDictionary: personDictionary,
       daysArray: daysArray,
-      // dayValues: daysArray,
-      // rows: {},
       name: ""
     };
 
@@ -109,9 +132,6 @@ class Reservation extends React.Component {
 
     let newDaysArray = JSON.parse(JSON.stringify(this.state.daysArray));
     newPersonDictionary[this.state.name] = newDaysArray;
-    // console.log(this.state.personDictionary);
-    // console.log(this.state.daysArray);
-    // console.log(newPersonDictionary);
     this.setState({
       personDictionary: newPersonDictionary
     });
