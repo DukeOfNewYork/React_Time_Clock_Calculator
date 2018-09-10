@@ -16,13 +16,52 @@ const dayz = {
 function Schedule(schedule) {
   this.rawSchedule = schedule;
   this.combinedSchedule = {};
+  this.calculatedSchedule = [];
+  this.hoursWorking = 0;
+  this.daysAutoWorking = 0;
+  this.finalSchedule = [];
   this.combinedScheduleFunction = function() {
     let rawWorkArray = [];
-    for (let day in schedule) {
-      rawWorkArray.push(hoursAndBooleanCombined(schedule[day]));
+    let schedule2 = this.rawSchedule;
+    let daysAutoWorking = 0;
+    for (let day in schedule2) {
+      rawWorkArray.push(hoursAndBooleanCombined(schedule2[day]));
+      if (schedule2[day][0] === true) {
+        daysAutoWorking++;
+      }
     }
+    this.daysAutoWorking = daysAutoWorking;
     this.combinedSchedule = rawWorkArray;
   };
+
+  this.daysAutoCalculatedFunction = function() {
+    const schedule = this.combinedSchedule;
+    let startingHours = this.hoursWorking;
+    let totalHours = 40;
+    let manualHours = 0.25;
+    let hoursAddedToEachDay = 0;
+    if (this.daysAutoWorking > 0) {
+      while (totalHours >= this.daysAutoWorking * manualHours) {
+        const hoursOffset = this.daysAutoWorking * manualHours;
+        totalHours -= hoursOffset;
+        hoursAddedToEachDay += hoursOffset / this.daysAutoWorking;
+      }
+    }
+    schedule.push(totalHours);
+    for (let day in schedule) {
+      if (schedule[day] === true) {
+        schedule[day] = hoursAddedToEachDay;
+      }
+    }
+    this.combinedSchedule = schedule;
+  };
+
+  this.completeSchedule = function() {
+    this.combinedScheduleFunction();
+    numberOfAutoDays;
+  };
+  this.combinedScheduleFunction();
+  this.daysAutoCalculatedFunction();
 }
 
 let hoursAndBooleanCombined = function hoursAndBooleanCombined(dayData: Array) {
@@ -53,32 +92,40 @@ let numberOfAutoDays = function numberOfAutoDays(schedule) {
   return autoDays;
 };
 
-function RowBuilder(props) {
-  let person = props.person;
-  return (
-    <tr>
-      {person.map(function(row, i) {
-        return <td>{row}</td>;
-      }, this)}
-    </tr>
-  );
-}
 function DisplaySchedule(props) {
   let people = props.people;
   let displayPeople = {};
 
   for (let person in people) {
     displayPeople[person] = new Schedule(people[person]);
-    displayPeople[person].combinedScheduleFunction();
+    console.log(displayPeople);
+    // console.log(displayPeople[person]);
+  }
+
+  function RowBuilder(props) {
+    let person = props.person;
+    return (
+      <tr>
+        {person.map(function(row, i) {
+          // console.log(person);
+          return <td>{row}</td>;
+        }, this)}
+      </tr>
+    );
   }
 
   return (
     <table>
       <tbody>
+        <th key={"name"}>Name:</th>
+        {Object.entries(dayz).map(function(day, i) {
+          return <th key={day[0]}>{day[0]}</th>;
+        }, this)}
         {Object.entries(displayPeople).map(function(person, i) {
           const nameAndSchedule = [person[0]].concat(
             person[1].combinedSchedule
           );
+          // console.log(nameAndSchedule);
           return <RowBuilder person={nameAndSchedule} />;
         }, this)}
       </tbody>
@@ -138,7 +185,7 @@ class Reservation extends React.Component {
   }
 
   render() {
-    hoursAndBooleanCombined();
+    // hoursAndBooleanCombined();
     return (
       <div>
         <InputForm
