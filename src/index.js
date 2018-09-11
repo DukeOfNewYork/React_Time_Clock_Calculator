@@ -14,12 +14,24 @@ const dayz = {
 };
 
 function Schedule(schedule) {
-  this.rawSchedule = schedule;
+  // console.log(schedule);
+  this.hoursWorking = schedule.workHours;
+  this.rawSchedule = schedule.days;
   this.combinedSchedule = {};
   this.calculatedSchedule = [];
-  this.hoursWorking = 0;
   this.daysAutoWorking = 0;
   this.finalSchedule = [];
+  //The hours added up from manual entry and where the day is not checked
+  this.manualHours = 0;
+  this.manualHoursFunction = function() {
+    let manualHours = 0;
+    for (const day in this.rawSchedule) {
+      if (this.rawSchedule[day][0] === false) {
+        manualHours += this.rawSchedule[day][1];
+      }
+    }
+    this.manualHours = manualHours;
+  };
   this.combinedScheduleFunction = function() {
     let rawWorkArray = [];
     let schedule2 = this.rawSchedule;
@@ -32,12 +44,12 @@ function Schedule(schedule) {
     }
     this.daysAutoWorking = daysAutoWorking;
     this.combinedSchedule = rawWorkArray;
+    // console.log(rawWorkArray);
   };
 
   this.daysAutoCalculatedFunction = function() {
     const schedule = this.combinedSchedule;
-    let startingHours = this.hoursWorking;
-    let totalHours = 40;
+    let totalHours = this.hoursWorking - this.manualHours;
     let manualHours = 0.25;
     let hoursAddedToEachDay = 0;
     if (this.daysAutoWorking > 0) {
@@ -60,6 +72,7 @@ function Schedule(schedule) {
     this.combinedScheduleFunction();
     numberOfAutoDays;
   };
+  this.manualHoursFunction();
   this.combinedScheduleFunction();
   this.daysAutoCalculatedFunction();
 }
@@ -98,8 +111,7 @@ function DisplaySchedule(props) {
 
   for (let person in people) {
     displayPeople[person] = new Schedule(people[person]);
-    console.log(displayPeople);
-    // console.log(displayPeople[person]);
+    // console.log(people[person]);
   }
 
   function RowBuilder(props) {
@@ -107,7 +119,6 @@ function DisplaySchedule(props) {
     return (
       <tr>
         {person.map(function(row, i) {
-          // console.log(person);
           return <td>{row}</td>;
         }, this)}
       </tr>
@@ -121,6 +132,7 @@ function DisplaySchedule(props) {
         {Object.entries(dayz).map(function(day, i) {
           return <th key={day[0]}>{day[0]}</th>;
         }, this)}
+        <th key={"Extra Hours"}>Extra Hours</th>
         {Object.entries(displayPeople).map(function(person, i) {
           const nameAndSchedule = [person[0]].concat(
             person[1].combinedSchedule
@@ -142,9 +154,9 @@ class Reservation extends React.Component {
     this.state = {
       personDictionary: personDictionary,
       daysArray: daysArray,
+      Hours_Working: 0,
       name: ""
     };
-
     this.handleInputChange = this.handleInputChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
   }
@@ -160,10 +172,16 @@ class Reservation extends React.Component {
         daysArray: days
       });
     } else if (target.type === "number") {
-      days[target.name][1] = value;
-      this.setState({
-        daysArray: days
-      });
+      if (target.name === "Hours_Working") {
+        this.setState({
+          Hours_Working: Number(value)
+        });
+      } else {
+        days[target.name][1] = Number(value);
+        this.setState({
+          daysArray: days
+        });
+      }
     } else if (target.type === "text") {
       this.setState({
         name: value
@@ -178,19 +196,22 @@ class Reservation extends React.Component {
     );
 
     let newDaysArray = JSON.parse(JSON.stringify(this.state.daysArray));
-    newPersonDictionary[this.state.name] = newDaysArray;
+    newPersonDictionary[this.state.name] = {
+      days: newDaysArray,
+      workHours: this.state.Hours_Working
+    };
     this.setState({
       personDictionary: newPersonDictionary
     });
   }
 
   render() {
-    // hoursAndBooleanCombined();
     return (
       <div>
         <InputForm
           personName={this.state.name}
           daysArray={this.state.daysArray}
+          Hours_Working={this.state.Hours_Working}
           handleSubmit={this.handleSubmit}
           handleInputChange={this.handleInputChange.bind(this)}
         />
@@ -206,17 +227,22 @@ function InputForm(props) {
       <table>
         <tbody>
           <tr>
+            <label htmlFor="Hours_Working">Hours Working:</label>
+            <input
+              type="number"
+              name="Hours_Working"
+              value={props.Hours_Working}
+              onChange={props.handleInputChange}
+            />
+          </tr>
+          <tr>
             <th>
               <label htmlFor="name">Name:</label>
               <input
                 type="text"
                 name="firstname"
                 value={props.personName}
-                // onChange={(event) => this.setState({
-                //   name: event.target.value
-                // })}
                 onChange={props.handleInputChange}
-                // autoFocus
               />
             </th>
             {Object.entries(props.daysArray).map(function(day, i) {
