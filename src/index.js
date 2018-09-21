@@ -13,68 +13,111 @@ const dayz = {
   Sunday: false
 };
 
+function existy(x) {
+  return x != null;
+}
+
+function truthy(x) {
+  return x !== false && existy(x);
+}
+
+const daysAutoCalculatedFunction = function(
+  schedule,
+  hoursWorking,
+  manuallyEnteredHoursAdded,
+  daysAutoWorking
+) {
+  // const schedule = this.combinedSchedule;
+  let totalHours = hoursWorking - manuallyEnteredHoursAdded;
+  let smallestCountedAmmount = 0.25;
+  let hoursAddedToEachDay = 0;
+  if (daysAutoWorking > 0) {
+    while (totalHours >= daysAutoWorking * smallestCountedAmmount) {
+      const hoursOffset = daysAutoWorking * smallestCountedAmmount;
+      totalHours -= hoursOffset;
+      hoursAddedToEachDay += hoursOffset / daysAutoWorking;
+    }
+  }
+  schedule.push(totalHours);
+  for (let day in schedule) {
+    if (schedule[day] === true) {
+      schedule[day] = hoursAddedToEachDay;
+    }
+  }
+  return schedule;
+};
+
+// function extractManuallyEnteredHours(schedule){}
+const returnIfTrue = function(bool, value, elseReturn) {
+  if (bool) {
+    return value;
+  } else {
+    return elseReturn;
+  }
+};
+const Compare = function(input, compare) {
+  return input === compare;
+};
+const add = (a, b) => a + b;
+
+const converObjectToArray = function(object) {
+  return Object.entries(object);
+};
+
 function Schedule(schedule) {
   // console.log(schedule);
   this.hoursWorking = schedule.workHours;
   this.rawSchedule = schedule.days;
+  this.rawScheduleArrays = converObjectToArray(this.rawSchedule);
   this.combinedSchedule = {};
   this.calculatedSchedule = [];
   this.daysAutoWorking = 0;
   this.finalSchedule = [];
   //The hours added up from manual entry and where the day is not checked
-  this.manualHours = 0;
-  this.manualHoursFunction = function() {
-    let manualHours = 0;
-    for (const day in this.rawSchedule) {
-      if (this.rawSchedule[day][0] === false) {
-        manualHours += this.rawSchedule[day][1];
-      }
-    }
-    this.manualHours = manualHours;
+  this.manuallyEnteredHoursAdded = 0;
+  this.manuallyEnteredHoursAddedFunction = function() {
+    this.manuallyEnteredHoursAdded = this.rawScheduleArrays
+      .map(day => returnIfTrue(Compare(day[1][0], false), day[1][1], false))
+      .reduce(add);
   };
   this.combinedScheduleFunction = function() {
+    // let manuallyEnteredHoursAdded = this.rawScheduleArrays.map(officer => ifCompareReturnOther(officer[1][0],officer[1][1]));
     let rawWorkArray = [];
     let schedule2 = this.rawSchedule;
-    let daysAutoWorking = 0;
     for (let day in schedule2) {
       rawWorkArray.push(hoursAndBooleanCombined(schedule2[day]));
-      if (schedule2[day][0] === true) {
-        daysAutoWorking++;
-      }
     }
-    this.daysAutoWorking = daysAutoWorking;
-    this.combinedSchedule = rawWorkArray;
-    // console.log(rawWorkArray);
-  };
 
-  this.daysAutoCalculatedFunction = function() {
-    const schedule = this.combinedSchedule;
-    let totalHours = this.hoursWorking - this.manualHours;
-    let manualHours = 0.25;
-    let hoursAddedToEachDay = 0;
-    if (this.daysAutoWorking > 0) {
-      while (totalHours >= this.daysAutoWorking * manualHours) {
-        const hoursOffset = this.daysAutoWorking * manualHours;
-        totalHours -= hoursOffset;
-        hoursAddedToEachDay += hoursOffset / this.daysAutoWorking;
-      }
-    }
-    schedule.push(totalHours);
-    for (let day in schedule) {
-      if (schedule[day] === true) {
-        schedule[day] = hoursAddedToEachDay;
-      }
-    }
-    this.combinedSchedule = schedule;
+    this.daysAutoWorking = this.rawScheduleArrays
+      .map(day => Compare(day[1][0], true))
+      .reduce(add);
+    // this.combinedSchedule = this.rawScheduleArrays.map(day => day[1][1]);
+    // this.combinedSchedule = this.rawScheduleArrays.map(officer => Compare(officer[1][0], officer[1][1]));
+    // console.log(this.rawScheduleArrays.map(officer => Compare(officer[1][0], officer[1][1])));
+    // returnIfTrue
+    console.log(
+      this.rawScheduleArrays.map(officer =>
+        returnIfTrue(officer[1][0], true, officer[1][1])
+      )
+    );
+    console.log(rawWorkArray);
+    this.combinedSchedule = this.rawScheduleArrays.map(officer =>
+      returnIfTrue(officer[1][0], true, officer[1][1])
+    );
   };
 
   this.completeSchedule = function() {
     this.combinedScheduleFunction();
     numberOfAutoDays;
   };
-  this.manualHoursFunction();
+  this.manuallyEnteredHoursAddedFunction();
   this.combinedScheduleFunction();
-  this.daysAutoCalculatedFunction();
+  this.combinedSchedule = daysAutoCalculatedFunction(
+    this.combinedSchedule,
+    this.hoursWorking,
+    this.manuallyEnteredHoursAdded,
+    this.daysAutoWorking
+  );
 }
 
 let hoursAndBooleanCombined = function hoursAndBooleanCombined(dayData: Array) {
