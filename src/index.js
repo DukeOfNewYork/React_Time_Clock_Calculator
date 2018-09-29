@@ -21,99 +21,92 @@ function truthy(x) {
   return x !== false && existy(x);
 }
 
-const daysAutoCalculatedFunction = function(
-  schedule,
-  hoursWorking,
-  manuallyEnteredHoursAdded,
-  daysAutoWorking
-) {
-  // const schedule = this.combinedSchedule;
-  let totalHours = hoursWorking - manuallyEnteredHoursAdded;
-  let smallestCountedAmmount = 0.25;
-  let hoursAddedToEachDay = 0;
-  if (daysAutoWorking > 0) {
-    while (totalHours >= daysAutoWorking * smallestCountedAmmount) {
-      const hoursOffset = daysAutoWorking * smallestCountedAmmount;
-      totalHours -= hoursOffset;
-      hoursAddedToEachDay += hoursOffset / daysAutoWorking;
-    }
-  }
-  schedule.push(totalHours);
-  for (let day in schedule) {
-    if (schedule[day] === true) {
-      schedule[day] = hoursAddedToEachDay;
-    }
-  }
-  return schedule;
-};
-
-// function extractManuallyEnteredHours(schedule){}
-const returnIfTrue = function(bool, value, elseReturn) {
-  if (bool) {
-    return value;
-  } else {
-    return elseReturn;
-  }
-};
 const Compare = function(input, compare) {
   return input === compare;
 };
+
 const add = (a, b) => a + b;
 
 const converObjectToArray = function(object) {
   return Object.entries(object);
 };
 
+const placeHolder = function(obj) {
+  return obj;
+};
+
+function isNumber(num) {
+  return !isNaN(parseFloat(num)) && isFinite(num);
+}
+
+let calculateHoursPreFunctional = function(
+  totalHours,
+  daysAutoWorking,
+  smallestCountedAmmount
+) {
+  let hoursAddedToEachDay = 0;
+  // console.log(totalHours, daysAutoWorking, smallestCountedAmmount);
+  while (totalHours >= daysAutoWorking * smallestCountedAmmount) {
+    const hoursOffset = daysAutoWorking * smallestCountedAmmount;
+    totalHours -= hoursOffset;
+    hoursAddedToEachDay += hoursOffset / daysAutoWorking;
+  }
+  return hoursAddedToEachDay;
+};
+
+const daysAutoCalculatedFunction = function(
+  schedule,
+  hoursWorking,
+  manuallyEnteredHoursAdded,
+  daysAutoWorking2
+) {
+  let totalHours2 = hoursWorking - manuallyEnteredHoursAdded;
+
+  let hoursAddedToEachDay3 = returnIfTrue(
+    daysAutoWorking2 > 0,
+    calculateHoursPreFunctional(totalHours2, daysAutoWorking2, 0.25),
+    0
+  );
+
+  let schedule2 = schedule.map(day =>
+    returnIfTrue(isNumber(day), day, hoursAddedToEachDay3)
+  );
+  schedule2.push(totalHours2 - hoursAddedToEachDay3 * daysAutoWorking2);
+  return schedule2;
+};
+
+const returnIfTrue = function(bool, value, elseReturn) {
+  // console.log(bool, value, elseReturn);
+  if (bool) {
+    return value;
+  } else {
+    return elseReturn;
+  }
+};
+// function extractManuallyEnteredHours(schedule){}
+
 function Schedule(schedule) {
   // console.log(schedule);
-  this.hoursWorking = schedule.workHours;
   this.rawSchedule = schedule.days;
   this.rawScheduleArrays = converObjectToArray(this.rawSchedule);
-  this.combinedSchedule = {};
+  this.hoursWorking = schedule.workHours;
+  this.rawScheduleArraysSorted = this.rawScheduleArrays.map(officer =>
+    returnIfTrue(officer[1][0], true, officer[1][1])
+  );
   this.calculatedSchedule = [];
-  this.daysAutoWorking = 0;
+  this.daysAutoWorking = this.rawScheduleArrays
+    .map(day => Compare(day[1][0], true))
+    .reduce(add);
   this.finalSchedule = [];
-  //The hours added up from manual entry and where the day is not checked
-  this.manuallyEnteredHoursAdded = 0;
-  this.manuallyEnteredHoursAddedFunction = function() {
-    this.manuallyEnteredHoursAdded = this.rawScheduleArrays
-      .map(day => returnIfTrue(Compare(day[1][0], false), day[1][1], false))
-      .reduce(add);
-  };
-  this.combinedScheduleFunction = function() {
-    // let manuallyEnteredHoursAdded = this.rawScheduleArrays.map(officer => ifCompareReturnOther(officer[1][0],officer[1][1]));
-    let rawWorkArray = [];
-    let schedule2 = this.rawSchedule;
-    for (let day in schedule2) {
-      rawWorkArray.push(hoursAndBooleanCombined(schedule2[day]));
-    }
-
-    this.daysAutoWorking = this.rawScheduleArrays
-      .map(day => Compare(day[1][0], true))
-      .reduce(add);
-    // this.combinedSchedule = this.rawScheduleArrays.map(day => day[1][1]);
-    // this.combinedSchedule = this.rawScheduleArrays.map(officer => Compare(officer[1][0], officer[1][1]));
-    // console.log(this.rawScheduleArrays.map(officer => Compare(officer[1][0], officer[1][1])));
-    // returnIfTrue
-    console.log(
-      this.rawScheduleArrays.map(officer =>
-        returnIfTrue(officer[1][0], true, officer[1][1])
-      )
-    );
-    console.log(rawWorkArray);
-    this.combinedSchedule = this.rawScheduleArrays.map(officer =>
-      returnIfTrue(officer[1][0], true, officer[1][1])
-    );
-  };
-
   this.completeSchedule = function() {
     this.combinedScheduleFunction();
     numberOfAutoDays;
   };
-  this.manuallyEnteredHoursAddedFunction();
-  this.combinedScheduleFunction();
+  this.manuallyEnteredHoursAdded = this.rawScheduleArrays
+    .map(day => returnIfTrue(Compare(day[1][0], false), day[1][1], false))
+    .reduce(add);
   this.combinedSchedule = daysAutoCalculatedFunction(
-    this.combinedSchedule,
+    this.rawScheduleArraysSorted,
     this.hoursWorking,
     this.manuallyEnteredHoursAdded,
     this.daysAutoWorking
@@ -152,10 +145,21 @@ function DisplaySchedule(props) {
   let people = props.people;
   let displayPeople = {};
 
+  let hoursTogether = { combinedSchedule: [] };
   for (let person in people) {
     displayPeople[person] = new Schedule(people[person]);
-    // console.log(people[person]);
+    console.log(displayPeople[person]);
+    hoursTogether.combinedSchedule = displayPeople[person].combinedSchedule.map(
+      (day, index) =>
+        returnIfTrue(
+          isNumber(hoursTogether.combinedSchedule[index]),
+          day + hoursTogether.combinedSchedule[index],
+          day
+        )
+    );
   }
+  displayPeople["Combind Schedule"] = hoursTogether;
+  // console.log(hoursTogether);
 
   function RowBuilder(props) {
     let person = props.person;
