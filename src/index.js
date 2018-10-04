@@ -13,6 +13,8 @@ const dayz = {
   Sunday: false
 };
 
+const inputReject = function(input, reject) {};
+
 function existy(x) {
   return x != null;
 }
@@ -35,44 +37,42 @@ const placeHolder = function(obj) {
   return obj;
 };
 
-function isNumber(num) {
+const isNumber = function(num) {
   return !isNaN(parseFloat(num)) && isFinite(num);
-}
+};
 
-let calculateHoursPreFunctional = function(
+const calculateAutoDayHours = function(
   totalHours,
   daysAutoWorking,
   smallestCountedAmmount
 ) {
-  let hoursAddedToEachDay = 0;
-  // console.log(totalHours, daysAutoWorking, smallestCountedAmmount);
-  while (totalHours >= daysAutoWorking * smallestCountedAmmount) {
-    const hoursOffset = daysAutoWorking * smallestCountedAmmount;
-    totalHours -= hoursOffset;
-    hoursAddedToEachDay += hoursOffset / daysAutoWorking;
-  }
-  return hoursAddedToEachDay;
+  const totalMinumalIncrements = totalHours / smallestCountedAmmount;
+  const incrementsPerDay = Math.floor(totalMinumalIncrements / daysAutoWorking);
+  return incrementsPerDay * smallestCountedAmmount;
 };
 
 const daysAutoCalculatedFunction = function(
+  //Returns a number only array and calculates the auto hours
   schedule,
   hoursWorking,
   manuallyEnteredHoursAdded,
-  daysAutoWorking2
+  daysAutoWorking
 ) {
-  let totalHours2 = hoursWorking - manuallyEnteredHoursAdded;
+  const totalHoursToCalculate = hoursWorking - manuallyEnteredHoursAdded;
 
-  let hoursAddedToEachDay3 = returnIfTrue(
-    daysAutoWorking2 > 0,
-    calculateHoursPreFunctional(totalHours2, daysAutoWorking2, 0.25),
+  const hoursAddedToEachDay3 = returnIfTrue(
+    daysAutoWorking > 0,
+    calculateAutoDayHours(totalHoursToCalculate, daysAutoWorking, 0.25),
     0
   );
 
-  let schedule2 = schedule.map(day =>
+  let finishedSchedule = schedule.map(day =>
     returnIfTrue(isNumber(day), day, hoursAddedToEachDay3)
   );
-  schedule2.push(totalHours2 - hoursAddedToEachDay3 * daysAutoWorking2);
-  return schedule2;
+  finishedSchedule.push(
+    totalHoursToCalculate - hoursAddedToEachDay3 * daysAutoWorking
+  );
+  return finishedSchedule;
 };
 
 const returnIfTrue = function(bool, value, elseReturn) {
@@ -90,18 +90,12 @@ function Schedule(schedule) {
   this.rawSchedule = schedule.days;
   this.rawScheduleArrays = converObjectToArray(this.rawSchedule);
   this.hoursWorking = schedule.workHours;
-  this.rawScheduleArraysSorted = this.rawScheduleArrays.map(officer =>
-    returnIfTrue(officer[1][0], true, officer[1][1])
+  this.rawScheduleArraysSorted = this.rawScheduleArrays.map(day =>
+    returnIfTrue(day[1][0], true, day[1][1])
   );
-  this.calculatedSchedule = [];
   this.daysAutoWorking = this.rawScheduleArrays
     .map(day => Compare(day[1][0], true))
     .reduce(add);
-  this.finalSchedule = [];
-  this.completeSchedule = function() {
-    this.combinedScheduleFunction();
-    numberOfAutoDays;
-  };
   this.manuallyEnteredHoursAdded = this.rawScheduleArrays
     .map(day => returnIfTrue(Compare(day[1][0], false), day[1][1], false))
     .reduce(add);
@@ -148,7 +142,6 @@ function DisplaySchedule(props) {
   let hoursTogether = { combinedSchedule: [] };
   for (let person in people) {
     displayPeople[person] = new Schedule(people[person]);
-    console.log(displayPeople[person]);
     hoursTogether.combinedSchedule = displayPeople[person].combinedSchedule.map(
       (day, index) =>
         returnIfTrue(
