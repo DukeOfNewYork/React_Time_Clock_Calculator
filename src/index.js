@@ -1,7 +1,10 @@
 import React from "react";
 import ReactDOM from "react-dom";
-
+import _ from "underscore";
 import "./styles.css";
+
+const viewFunctions = require("./view");
+const functionalFunctions = require("./functional.js");
 
 const dayz = {
   Monday: true,
@@ -12,100 +15,6 @@ const dayz = {
   Saturday: true,
   Sunday: false
 };
-
-const inputReject = function(input, reject) {};
-
-function existy(x) {
-  return x != null;
-}
-
-function truthy(x) {
-  return x !== false && existy(x);
-}
-
-const Compare = function(input, compare) {
-  return input === compare;
-};
-
-const add = (a, b) => a + b;
-
-const converObjectToArray = function(object) {
-  return Object.entries(object);
-};
-
-const placeHolder = function(obj) {
-  return obj;
-};
-
-const isNumber = function(num) {
-  return !isNaN(parseFloat(num)) && isFinite(num);
-};
-
-const calculateAutoDayHours = function(
-  totalHours,
-  daysAutoWorking,
-  smallestCountedAmmount
-) {
-  const totalMinumalIncrements = totalHours / smallestCountedAmmount;
-  const incrementsPerDay = Math.floor(totalMinumalIncrements / daysAutoWorking);
-  return incrementsPerDay * smallestCountedAmmount;
-};
-
-const daysAutoCalculatedFunction = function(
-  //Returns a number only array and calculates the auto hours
-  schedule,
-  hoursWorking,
-  manuallyEnteredHoursAdded,
-  daysAutoWorking
-) {
-  const totalHoursToCalculate = hoursWorking - manuallyEnteredHoursAdded;
-
-  const hoursAddedToEachDay3 = returnIfTrue(
-    daysAutoWorking > 0,
-    calculateAutoDayHours(totalHoursToCalculate, daysAutoWorking, 0.25),
-    0
-  );
-
-  let finishedSchedule = schedule.map(day =>
-    returnIfTrue(isNumber(day), day, hoursAddedToEachDay3)
-  );
-  finishedSchedule.push(
-    totalHoursToCalculate - hoursAddedToEachDay3 * daysAutoWorking
-  );
-  return finishedSchedule;
-};
-
-const returnIfTrue = function(bool, value, elseReturn) {
-  // console.log(bool, value, elseReturn);
-  if (bool) {
-    return value;
-  } else {
-    return elseReturn;
-  }
-};
-// function extractManuallyEnteredHours(schedule){}
-
-function Schedule(schedule) {
-  // console.log(schedule);
-  this.rawSchedule = schedule.days;
-  this.rawScheduleArrays = converObjectToArray(this.rawSchedule);
-  this.hoursWorking = schedule.workHours;
-  this.rawScheduleArraysSorted = this.rawScheduleArrays.map(day =>
-    returnIfTrue(day[1][0], true, day[1][1])
-  );
-  this.daysAutoWorking = this.rawScheduleArrays
-    .map(day => Compare(day[1][0], true))
-    .reduce(add);
-  this.manuallyEnteredHoursAdded = this.rawScheduleArrays
-    .map(day => returnIfTrue(Compare(day[1][0], false), day[1][1], false))
-    .reduce(add);
-  this.combinedSchedule = daysAutoCalculatedFunction(
-    this.rawScheduleArraysSorted,
-    this.hoursWorking,
-    this.manuallyEnteredHoursAdded,
-    this.daysAutoWorking
-  );
-}
 
 let hoursAndBooleanCombined = function hoursAndBooleanCombined(dayData: Array) {
   if (dayData) {
@@ -135,56 +44,6 @@ let numberOfAutoDays = function numberOfAutoDays(schedule) {
   return autoDays;
 };
 
-function DisplaySchedule(props) {
-  let people = props.people;
-  let displayPeople = {};
-
-  let hoursTogether = { combinedSchedule: [] };
-  for (let person in people) {
-    displayPeople[person] = new Schedule(people[person]);
-    hoursTogether.combinedSchedule = displayPeople[person].combinedSchedule.map(
-      (day, index) =>
-        returnIfTrue(
-          isNumber(hoursTogether.combinedSchedule[index]),
-          day + hoursTogether.combinedSchedule[index],
-          day
-        )
-    );
-  }
-  displayPeople["Combind Schedule"] = hoursTogether;
-  // console.log(hoursTogether);
-
-  function RowBuilder(props) {
-    let person = props.person;
-    return (
-      <tr>
-        {person.map(function(row, i) {
-          return <td>{row}</td>;
-        }, this)}
-      </tr>
-    );
-  }
-
-  return (
-    <table>
-      <tbody>
-        <th key={"name"}>Name:</th>
-        {Object.entries(dayz).map(function(day, i) {
-          return <th key={day[0]}>{day[0]}</th>;
-        }, this)}
-        <th key={"Extra Hours"}>Extra Hours</th>
-        {Object.entries(displayPeople).map(function(person, i) {
-          const nameAndSchedule = [person[0]].concat(
-            person[1].combinedSchedule
-          );
-          // console.log(nameAndSchedule);
-          return <RowBuilder person={nameAndSchedule} />;
-        }, this)}
-      </tbody>
-    </table>
-  );
-}
-
 class Reservation extends React.Component {
   constructor(props) {
     super(props);
@@ -192,11 +51,13 @@ class Reservation extends React.Component {
     let personDictionary = {};
     for (var i in props.days) daysArray[i] = [props.days[i], 0];
     this.state = {
+      days: props.days,
       personDictionary: personDictionary,
       daysArray: daysArray,
       Hours_Working: 0,
       name: ""
     };
+    console.log(daysArray);
     this.handleInputChange = this.handleInputChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
   }
@@ -255,7 +116,10 @@ class Reservation extends React.Component {
           handleSubmit={this.handleSubmit}
           handleInputChange={this.handleInputChange.bind(this)}
         />
-        <DisplaySchedule people={this.state.personDictionary} />
+        <viewFunctions.DisplaySchedule
+          days={this.state.days}
+          people={this.state.personDictionary}
+        />
       </div>
     );
   }
@@ -288,7 +152,7 @@ function InputForm(props) {
             {Object.entries(props.daysArray).map(function(day, i) {
               return (
                 <th key={day[0]}>
-                  <IndividualDay
+                  <viewFunctions.IndividualDay
                     name={day[0]}
                     handleInputChange={props.handleInputChange}
                     checked={day[1][0]}
